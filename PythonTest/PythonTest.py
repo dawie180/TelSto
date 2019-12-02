@@ -3,10 +3,10 @@ from telepot.loop import MessageLoop
 from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton
 from pprint import pprint
 #import ConfigParser
-import threading
-from threading import Thread
-import time
-import datetime
+#import threading
+#from threading import Thread
+#import time
+#import datetime
 from datetime import datetime
 from datetime import timedelta
 
