@@ -13,57 +13,42 @@ import sqlite3
 from sqlite3 import Error
 
 bot = telepot.Bot('320663225:AAFVzc1y_7dLUu97g1kqbw9PxkQU1aiSUMk')
-SqlitePath = 'D:\pythonsqlite.db'
+SqlitePath = 'D:\pythonsqlite2.db'
 
 
 WelcomeMessage = "Welcome to <Placeholer>, please send us the name of your suburb or hit the GEO LOCATION button below"
 
-sql_create_user_table = """CREATE TABLE IF NOT EXISTS user (
-                                    id integer PRIMARY KEY,
-                                    user_id integer NOT NULL,
-                                    name text NOT NULL,
-                                    latitude text NOT NULL,
-                                    longitude text NOT NULL
-                                );"""
-
-def create_intitaldb(conn, task):
-    """
-    Create a new task
-    :param conn:
-    :param task:
-    :return:
-    """
- 
-    sql = ''' INSERT INTO tasks(user_id,name,latitude,longitude)
-              VALUES(?,?,?,?) '''
-    cur = conn.cursor()
-    cur.execute(sql, task)
-    return cur.lastrowid
-
 
 def create_connection(db_file):
+    """ create a database connection to the SQLite database
+        specified by db_file
+    :param db_file: database file
+    :return: Connection object or None
+    """
     conn = None
     try:
         conn = sqlite3.connect(db_file)
-        print("Sqlite db Opened v" + sqlite3.version)
-        return conn
     except Error as e:
         print(e)
  
     return conn
+ 
+ 
 
-
-def create_table(conn, create_table_sql):
-    """ create a table from the create_table_sql statement
-    :param conn: Connection object
-    :param create_table_sql: a CREATE TABLE statement
+ 
+def create_userlocationdb(conn, userlocationdb):
+    """
+    Create a new task
+    :param conn:
+    :param userlocationdb:
     :return:
     """
-    try:
-        c = conn.cursor()
-        c.execute(create_table_sql)
-    except Error as e:
-        print(e)
+ 
+    sql = ''' INSERT INTO userlocationdb(user_id,name,latitude,longitude)
+              VALUES(?,?,?,?) '''
+    cur = conn.cursor()
+    cur.execute(sql, userlocationdb)
+    return cur.lastrowid
 
 
 def select_all_tasks(conn):
@@ -73,12 +58,57 @@ def select_all_tasks(conn):
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks")
+    cur.execute("SELECT * FROM userlocationdb")
  
     rows = cur.fetchall()
  
     for row in rows:
         print(row)
+     
+
+def CheckIfUserExistsInDb(id):
+    try:
+        conn = create_connection(SqlitePath)
+        cursor = conn.cursor()
+        print("Checking if User Exists On The DB")
+
+        sql_select_query = """select * from userlocationdb where user_id = ?"""
+        cursor.execute(sql_select_query, (id,))
+        records = cursor.fetchone()
+        cursor.close()
+        if records == None:
+            return False
+        else:
+            return True
+        
+
+    except sqlite3.Error as error:
+        print("Failed to read data from sqlite table", error)
+    finally:
+        if (conn):
+            conn.close()
+            print("The SQLite connection is closed")
+
+def updateSqliteTable(user_id, name, longitude, latitude):
+    try:
+        conn = create_connection(SqlitePath)
+        cursor = conn.cursor()
+        print("Connected to SQLite")
+
+        sql_update_query = """Update userlocationdb set name = ?, longitude = ?, latitude = ? where user_id = ?"""
+        cursor.execute(sql_update_query)
+        conn.commit()
+        print("Record Updated successfully ")
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Failed to update sqlite table", error)
+    finally:
+        if (conn):
+            conn.close()
+            print("The SQLite connection is closed")
+
+
 
 
 def handle(msg):
@@ -88,17 +118,36 @@ def handle(msg):
 
     try:
         if msg["location"]:
-            print ("\n""location found")
-            sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["latitude"], msg["location"]["longitude"])
-            print ("saving to sqlite database")
-            conn = create_connection(SqlitePath)
-            create_intitaldb(conn, sqliteinitialinfo)
-            print ("saved to sqlite database")
-            select_all_tasks(conn)
-            conn.close()
+            print ("\n""Message with Location Data recieved")
+            if CheckIfUserExistsInDb(msg["from"]["id"])==False:
+                print("user_id not found, creating new Sqlite record...")
+                sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["latitude"], msg["location"]["longitude"])
+                print ("saving to sqlite database")
+                conn = create_connection(SqlitePath)
+                create_userlocationdb(conn, sqliteinitialinfo)
+                conn.commit()
+                print ("saved to sqlite database")
+                conn = create_connection(SqlitePath)
+                select_all_tasks(conn)
+            else:
+                print ("user_id already exists, updating location and name")
+                sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["latitude"], msg["location"]["longitude"])
+                print ("saving to sqlite database")
+                conn = create_connection(SqlitePath)
+                updateSqliteTable(297725915, "Awe", 10000, 10000)
+                print ("updated table to sqlite database")
+                conn = create_connection(SqlitePath)
+                select_all_tasks(conn)
+            
     except KeyError as error:   
         pass
     
+    #if msg["text"]:
+    #     User_id = msg["from"]["id"]
+
+
+
+
 
     try:
         if msg["text"] == "/start":
@@ -115,17 +164,34 @@ def handle(msg):
 
 
 
+#class MessageCounter(telepot.helper.ChatHandler):
+#    def __init__(self, *args, **kwargs):
+#        super(MessageCounter, self).__init__(*args, **kwargs)
+#        self._count = 0
+
+#    def on_chat_message(self, msg):
+#        self._count += 1
+#        self.sender.sendMessage(self._count)
+
+#TOKEN = sys.argv[1]  # get token from command-line
+
+#bot = telepot.DelegatorBot(TOKEN, [
+#    pave_event_space()(
+#        per_chat_id(), create_open, MessageCounter, timeout=10),
+#])
+#MessageLoop(bot).run_as_thread()
+
+#while 1:
+#    time.sleep(10)
+
+
+
+
 def main():
-    print ("Setting Up Sqlite Database")
-    conn = create_connection(SqlitePath)
-            
-    if conn is not None:
-            # create user database table
-            create_table(conn, sql_create_user_table)
-            print("Sqlite db Tables Created")
-            conn.close()
-    else:
-            print("Error! cannot create the database connection.")
+    print ("Checking if Sqlite Database exists...")
+    #conn = create_connection(SqlitePath)
+    
+    
 
 
 
