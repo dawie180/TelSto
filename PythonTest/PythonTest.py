@@ -87,26 +87,7 @@ def CheckIfUserExistsInDb(id):
     finally:
         if (conn):
             conn.close()
-            print("The SQLite connection is closed")
-
-def updateSqliteTable(user_id, name, longitude, latitude):
-    try:
-        conn = create_connection(SqlitePath)
-        cursor = conn.cursor()
-        print("Connected to SQLite")
-
-        sql_update_query = """Update userlocationdb set name = ?, longitude = ?, latitude = ? where user_id = ?"""
-        cursor.execute(sql_update_query)
-        conn.commit()
-        print("Record Updated successfully ")
-        cursor.close()
-
-    except sqlite3.Error as error:
-        print("Failed to update sqlite table", error)
-    finally:
-        if (conn):
-            conn.close()
-            print("The SQLite connection is closed")
+            #print("The SQLite connection is closed")
 
 
 
@@ -122,20 +103,23 @@ def handle(msg):
             if CheckIfUserExistsInDb(msg["from"]["id"])==False:
                 print("user_id not found, creating new Sqlite record...")
                 sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["latitude"], msg["location"]["longitude"])
-                print ("saving to sqlite database")
                 conn = create_connection(SqlitePath)
                 create_userlocationdb(conn, sqliteinitialinfo)
                 conn.commit()
-                print ("saved to sqlite database")
+                print ("created new entry in DB")
                 conn = create_connection(SqlitePath)
                 select_all_tasks(conn)
             else:
-                print ("user_id already exists, updating location and name")
-                sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["latitude"], msg["location"]["longitude"])
-                print ("saving to sqlite database")
+                print ("user_id already exists, updating location and name in DB")
                 conn = create_connection(SqlitePath)
-                updateSqliteTable(297725915, "Awe", 10000, 10000)
-                print ("updated table to sqlite database")
+                cur = conn.cursor()
+                UpdatedName = msg["from"]["first_name"]
+                user_id = msg["from"]["id"]
+                UpdatedsLatitude = msg["location"]["latitude"]
+                UpdatedLongitude = msg["location"]["longitude"]
+                cur.execute('UPDATE userlocationdb SET name = ?, latitude = ?, longitude = ? WHERE user_id = ?', (UpdatedName, UpdatedsLatitude, UpdatedLongitude, user_id))
+                conn.commit()
+                print ("updated DB entry success")
                 conn = create_connection(SqlitePath)
                 select_all_tasks(conn)
             
@@ -188,7 +172,7 @@ def handle(msg):
 
 
 def main():
-    print ("Checking if Sqlite Database exists...")
+    print ("Program Start")
     #conn = create_connection(SqlitePath)
     
     
