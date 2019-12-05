@@ -14,7 +14,6 @@ from sqlite3 import Error
 from geopy.geocoders import Nominatim
 
 bot = telepot.Bot('320663225:AAFVzc1y_7dLUu97g1kqbw9PxkQU1aiSUMk')
-SqlitePath = 'C:\TelSto.db'
 SqlitePath = 'D:\pythonsqlite2.db'
 geolocator = Nominatim(user_agent="Telsto")
 
@@ -38,18 +37,18 @@ def create_connection(db_file):
  
 
  
-def create_User(conn, User):
+def create_userlocationdb(conn, userlocationdb):
     """
     Create a new task
     :param conn:
-    :param User:
+    :param userlocationdb:
     :return:
     """
  
-    sql = ''' INSERT INTO User(Telegram_ID,name,Latitude,Longitude)
+    sql = ''' INSERT INTO userlocationdb(user_id,name,latitude,longitude)
               VALUES(?,?,?,?) '''
     cur = conn.cursor()
-    cur.execute(sql, User)
+    cur.execute(sql, userlocationdb)
     return cur.lastrowid
 
 
@@ -60,7 +59,7 @@ def select_all_tasks(conn):
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT * FROM User")
+    cur.execute("SELECT * FROM userlocationdb")
  
     rows = cur.fetchall()
  
@@ -74,7 +73,7 @@ def CheckIfUserExistsInDb(id):
         cursor = conn.cursor()
         print("Checking if User Exists On The DB")
 
-        sql_select_query = """select * from User where Telegram_ID = ?"""
+        sql_select_query = """select * from userlocationdb where user_id = ?"""
         cursor.execute(sql_select_query, (id,))
         records = cursor.fetchone()
         cursor.close()
@@ -82,6 +81,7 @@ def CheckIfUserExistsInDb(id):
             return False
         else:
             return True
+        
 
     except sqlite3.Error as error:
         print("Failed to read data from sqlite table", error)
@@ -89,6 +89,9 @@ def CheckIfUserExistsInDb(id):
         if (conn):
             conn.close()
             #print("The SQLite connection is closed")
+
+
+
 
 def handle(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
@@ -99,23 +102,23 @@ def handle(msg):
         if msg["location"]:
             print ("\n""Message with Location Data recieved")
             if CheckIfUserExistsInDb(msg["from"]["id"])==False:
-                print("Telegram_ID not found, creating new Sqlite record...")
-                sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["Latitude"], msg["location"]["Longitude"])
+                print("user_id not found, creating new Sqlite record...")
+                sqliteinitialinfo = (msg["from"]["id"], msg["from"]["first_name"], msg["location"]["latitude"], msg["location"]["longitude"])
                 conn = create_connection(SqlitePath)
-                create_User(conn, sqliteinitialinfo)
+                create_userlocationdb(conn, sqliteinitialinfo)
                 conn.commit()
                 print ("created new entry in DB")
                 conn = create_connection(SqlitePath)
                 select_all_tasks(conn)
             else:
-                print ("Telegram_ID already exists, updating location and name in DB")
+                print ("user_id already exists, updating location and name in DB")
                 conn = create_connection(SqlitePath)
                 cur = conn.cursor()
                 UpdatedName = msg["from"]["first_name"]
-                Telegram_ID = msg["from"]["id"]
-                UpdatedsLatitude = msg["location"]["Latitude"]
-                UpdatedLongitude = msg["location"]["Longitude"]
-                cur.execute('UPDATE User SET name = ?, Latitude = ?, Longitude = ? WHERE Telegram_ID = ?', (UpdatedName, UpdatedsLatitude, UpdatedLongitude, Telegram_ID))
+                user_id = msg["from"]["id"]
+                UpdatedsLatitude = msg["location"]["latitude"]
+                UpdatedLongitude = msg["location"]["longitude"]
+                cur.execute('UPDATE userlocationdb SET name = ?, latitude = ?, longitude = ? WHERE user_id = ?', (UpdatedName, UpdatedsLatitude, UpdatedLongitude, user_id))
                 conn.commit()
                 print ("updated DB entry success")
                 conn = create_connection(SqlitePath)
@@ -175,14 +178,20 @@ def handle(msg):
 #while 1:
 #    time.sleep(10)
 
+
+
+
 def main():
     print ("Program Start")
     #conn = create_connection(SqlitePath)
     
-    main()
-    MessageLoop(bot, handle).run_as_thread()
+    
 
 
+
+
+main()
+MessageLoop(bot, handle).run_as_thread()
 
 
 #Start
@@ -195,23 +204,5 @@ def main():
 #- Standard text
 #- Image display included
 #- video display EXTRA POINTS
-
-
-
-# DB and Table SCHEMA
-# DB - TelSto.DB
-
-# TABLES - 1) User
-    #Columns => Telegram_ID         - primary key
-    #Columns => Telegram_ID     - varchar(128)
-    #Columns => Username        - varchar(128)
-    #Columns => ContactNumber   - varchar(128)
-    #Columns => Seller          - bit
-    #Columns => Buyer           - bit
-    #Columns => Latitude             - varchar(128)
-    #Columns => Longitude            - varchar(128)
-    #Columns => CreateDateTime  - DateTime
-    #Columns => SaveDateTime    - DateTime
-
 
 
