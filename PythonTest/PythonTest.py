@@ -11,12 +11,13 @@ from datetime import datetime
 from datetime import timedelta
 import sqlite3
 from sqlite3 import Error
+from geopy.geocoders import Nominatim
 
 bot = telepot.Bot('320663225:AAFVzc1y_7dLUu97g1kqbw9PxkQU1aiSUMk')
 SqlitePath = 'D:\pythonsqlite2.db'
+geolocator = Nominatim(user_agent="Telsto")
 
-
-WelcomeMessage = "Welcome to <Placeholer>, please send us the name of your suburb or hit the GEO LOCATION button below"
+#WelcomeMessage = "Welcome to <Placeholer>, please send us the name of your suburb or hit the GEO LOCATION button below"
 
 
 def create_connection(db_file):
@@ -126,16 +127,25 @@ def handle(msg):
     except KeyError as error:   
         pass
     
-    #if msg["text"]:
-    #     User_id = msg["from"]["id"]
-
-
+    if msg["text"] != "/start":
+        if CheckIfUserExistsInDb(msg["from"]["id"])==False:
+            print ("Search suburb")
+            location = geolocator.geocode(msg["text"])
+            print(location.address)
+            print((location.latitude, location.longitude))
+            bot.sendMessage(chat_id, location.address + "\n\nIs this correct?",
+                                reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
+                                    keyboard=[
+                                        [KeyboardButton(text="Yes Sir \U0001f44d")],
+                                        [KeyboardButton(text="Oops, Let me try again \U0001f629" )]
+                                ]
+                            ))
 
 
 
     try:
         if msg["text"] == "/start":
-            bot.sendMessage(chat_id, WelcomeMessage,
+            bot.sendMessage(chat_id, "Hi " + msg["from"]["first_name"] + ",\n\nWelcome to the TelSto, Please send us the name of your suburb or click the Geo Location button below...",
                                 reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                     keyboard=[
                                         [KeyboardButton(text="\U0001f4cd GEO LOCATION \U0001f4cd", request_location=True)]
