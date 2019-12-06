@@ -220,3 +220,22 @@ MessageLoop(bot).run_as_thread()
 #- video display EXTRA POINTS
 
 
+
+
+# DB and Table SCHEMA
+# DB - TelSto.DB
+
+# TABLES - 1) User
+    #Columns => Telegram_ID     - primary key
+    #Columns => Telegram_ID     - varchar(128)
+    #Columns => Username        - varchar(128)
+    #Columns => TGReferral_ID   - varchar(128)
+    #Columns => Seller          - bit
+    #Columns => Buyer           - bit
+    #Columns => Latitude        - varchar(128)
+    #Columns => Longitude       - varchar(128)
+    #Columns => CreateDateTime  - DateTime
+    #Columns => SaveDateTime    - DateTime
+
+
+
