@@ -225,17 +225,23 @@ MessageLoop(bot).run_as_thread()
 # DB and Table SCHEMA
 # DB - TelSto.DB
 
-# TABLES - 1) User
-    #Columns => Telegram_ID     - primary key
-    #Columns => Telegram_ID     - varchar(128)
-    #Columns => Username        - varchar(128)
-    #Columns => TGReferral_ID   - varchar(128)
-    #Columns => Seller          - bit
-    #Columns => Buyer           - bit
-    #Columns => Latitude        - varchar(128)
-    #Columns => Longitude       - varchar(128)
-    #Columns => CreateDateTime  - DateTime
-    #Columns => SaveDateTime    - DateTime
-
+    #sql_create_User_table = """CREATE TABLE IF NOT EXISTS User (
+    #                            User_ID INTEGER PRIMARY KEY,
+    #                            Telegram_ID TEXT NOT NULL,
+    #                            TGReferral_ID TEXT NULL,
+    #                            TGReferralState BIT NULL,
+    #                            Seller bit NULL,
+    #                            Buyer bit NULL,
+    #                            Latitude TEXT NOT NULL,
+    #                            Longitude TEXT NOT NULL,
+    #                            AddressLine1 TEXT NULL,
+    #                            AddressLine2 TEXT NULL,
+    #                            City text NULL,
+    #                            PostCode TEXT NULL,
+    #                            Country TEXT NULL,
+    #                            DateTime NOT NULL,
+    #                            SaveDateTime DATETIME NOT NULL
+                                
+    #                        );"""
 
 
