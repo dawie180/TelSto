@@ -16,9 +16,10 @@ from geopy.geocoders import Nominatim
 
 
 TOKEN = '320663225:AAFVzc1y_7dLUu97g1kqbw9PxkQU1aiSUMk'
+#TOKEN = '884457382:AAGrGHxVplHPdM5tCT7MfS6cgueeTZKGtP4' #Store1
 
 
-SqlitePath = 'D:\pythonsqlite2.db'
+SqlitePath = 'C:\TelSto.db'
 geolocator = Nominatim(user_agent="Telsto")
 
 #WelcomeMessage = "Welcome to <Placeholer>, please send us the name of your suburb or hit the GEO LOCATION button below"
