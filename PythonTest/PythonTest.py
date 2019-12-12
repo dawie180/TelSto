@@ -74,7 +74,43 @@ def select_all_tasks(conn):
  
     for row in rows:
         print(row)
-     
+ 
+        
+def CheckApprovalConfirmation(id, name):
+    try:
+        conn = create_connection(SqlitePath)
+        cursor = conn.cursor()
+        print("\nChecking USer State In The DB")
+
+        sql_select_query =  """SELECT TGReferralSelf_ID from User where User_ID = ?"""
+        cursor.execute(sql_select_query, (id,))
+        records = cursor.fetchone()
+        cursor.close()
+        if records == None:
+            return False
+        else:
+            conn = create_connection(SqlitePath)
+            cursor = conn.cursor()
+            print("\nChecking USer State In The DB")
+
+            sql_select_query =  """SELECT User_ID from User where User_ID = ?"""
+            cursor.execute(sql_select_query, (id,))
+            records = cursor.fetchone()
+            cursor.close()
+            
+            
+            
+            
+            return records[0]
+        
+
+    except sqlite3.Error as error:
+        print("Failed to read data from sqlite table", error)
+    finally:
+        if (conn):
+            conn.close()
+            #print("The SQLite connection is closed")
+
 
 def CheckUserStatusInDB(id):
     try:
@@ -334,8 +370,6 @@ class MessageCounter(telepot.helper.ChatHandler):
                 self.sender.sendMessage("Next please send us your referal code, this you should have received from somone else is registered to the platform", reply_markup=ReplyKeyboardRemove())
 
             
-            if "Yes i know" in msg["text"]:
-                print ("Success")
 
             if "Resend Approval Request" in msg["text"]:
                 if CheckUserStatusInDB(msg["from"]["id"]) == "AWAITING BUYER APPROVAL":
@@ -344,6 +378,7 @@ class MessageCounter(telepot.helper.ChatHandler):
                     WaitTime24DbDString = CheckWaitTime24DB(msg["from"]["id"])[0]
                     WaitTime24Remaining = str(24 - int((datetime.now() - datetime.strptime(WaitTime24DbDString, '%Y-%m-%d %H:%M:%S.%f')).total_seconds() / 60 / 60))
                     if int(WaitTimeRemaining) > 0:
+                        print (WaitTime24DbDString)
                         self.sender.sendMessage("Please wait another " + WaitTimeRemaining + " minutes before sending another refereeal request" , parse_mode= 'Markdown',
                                     reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                         keyboard=[
@@ -358,21 +393,23 @@ class MessageCounter(telepot.helper.ChatHandler):
                         bot.sendMessage(get_referral_user_id(msg["from"]["id"])[0], "hi, " + "*"+nameforapproval+"*" + " needs approval, select appropriate answer below...", parse_mode= 'markdown',
                                 reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                     keyboard=[
-                                        [KeyboardButton(text="\u2705  " + "yes i know " + nameforapproval + "  \u2705" )],
+                                        [KeyboardButton(text="\u2705  " + "Yes i know " + nameforapproval + "  \u2705" )],
                                         [KeyboardButton(text="\u26d4\ufe0f  " + "no i don't know " + nameforapproval + "  \u26d4\ufe0f" )]
                                 ]
                             ))
-
+                        WaitTime24DbDString = CheckWaitTime24DB(msg["from"]["id"])[0]
+                        WaitTime24Remaining = str(24 - int((datetime.now() - datetime.strptime(WaitTime24DbDString, '%Y-%m-%d %H:%M:%S.%f')).total_seconds() / 60 / 60))
                         self.sender.sendMessage("sent for approval, wait for response", parse_mode= 'markdown',
                                 reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                     keyboard=[
                                         [KeyboardButton(text="Resend Approval Request (Wait 1 Hour)" )],
+                                        [KeyboardButton(text="Restart Approval Process (Wait " + WaitTime24Remaining + " Hours)" )]
                                 ]
                             ))
 
                         conn = create_connection(SqlitePath)
                         cursor = conn.cursor()
-                        cursor.execute('UPDATE User SET DateTime=? WHERE User_ID=?', (datetime.now(), msg["from"]["id"]))
+                        cursor.execute('UPDATE User SET SaveDateTime=? WHERE User_ID=?', (datetime.now(), msg["from"]["id"]))
                         conn.commit()
                         conn.close()
 
@@ -402,6 +439,15 @@ class MessageCounter(telepot.helper.ChatHandler):
                                             [KeyboardButton(text="Restart Approval Process (Wait " + WaitTime24Remaining + " Hours)" )]
                                 ]
                             ))
+
+            
+            if "Yes i know" in msg["text"]:
+                print ("Awe")
+                print (CheckApprovalConfirmation(msg["from"]["id"], msg["text"][14:30]))
+                #NameForSearch =  msg["text"][14:30]
+                NameForSearch =  msg["text"]
+
+                print (NameForSearch.split('\''))
 
         except KeyError as error:   
                 pass  
