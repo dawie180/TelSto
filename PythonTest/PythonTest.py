@@ -18,9 +18,10 @@ import random
 
 
 TOKEN = '320663225:AAFVzc1y_7dLUu97g1kqbw9PxkQU1aiSUMk'
+#TOKEN = '884457382:AAGrGHxVplHPdM5tCT7MfS6cgueeTZKGtP4' #Store1
 
 
-SqlitePath = 'D:\pythonsqlite2.db'
+SqlitePath = 'C:\TelSto.db'
 geolocator = Nominatim(user_agent="Telsto")
 
 global records  
