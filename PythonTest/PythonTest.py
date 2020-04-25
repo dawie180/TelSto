@@ -435,10 +435,52 @@ class MessageCounter(telepot.helper.ChatHandler):
                     select_all_tasks(conn)
                     conn.close()
                 
+
+
+                global Catagories
                 global State2
-                if msg["text"] != None and RegisteredUserState==6 and State2==0:
-                    RegisteredUserState=7
+                global State3
+                if msg["text"] == "Back" and RegisteredUserState==3:
+                    RegisteredUserState==0
+                    self.sender.sendMessage("Welcome back to the Telsto main menu, please select one of the following options...", parse_mode= 'Markdown',                       
+                        reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
+                            keyboard=[
+                                [KeyboardButton(text="Mary J Near Me" )],
+                                [KeyboardButton(text="Mary J Courier" )],
+                                [KeyboardButton(text="Cart" )],
+                                [KeyboardButton(text="Account Settings" )]
+                        ]
+                    ))
+
+                if msg["text"] == "Back" and RegisteredUserState==4:
+                    RegisteredUserState=3
+                    self.sender.sendMessage("Choose from the following", parse_mode= 'Markdown',
+                                reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
+                                    keyboard=[
+                                        [KeyboardButton(text="Collect")],
+                                        [KeyboardButton(text="Deliver" )],
+                                        [KeyboardButton(text="Back" )]
+                                ]
+                            ))
+
+                if msg["text"] == "Back" and RegisteredUserState==5:
+                    RegisteredUserState=0
+                    msg["text"] = "Collect"
+
+                if msg["text"] == "Back" and RegisteredUserState==7:
+                    RegisteredUserState=5
                     State2=1
+
+                if msg["text"] == "Back" and RegisteredUserState==6:
+                    RegisteredUserState=4
+                    State3=1
+
+                
+
+
+
+                if msg["text"] != None and RegisteredUserState==6:
+                    RegisteredUserState=7
                     #print(Catagory)
                     #print(msg["text"])
                     Statement = 'SELECT Image from ' + Catagory + ' where Product_Name = ?'
@@ -471,13 +513,13 @@ class MessageCounter(telepot.helper.ChatHandler):
                 
                 if msg["text"] != None and RegisteredUserState==5:
                     RegisteredUserState=6
-                    State=3
-                    State2=0
-                    #print(StoreName)
-                    Catagory = msg["text"]
-                    Statement = 'SELECT Product_Name from ' + str(msg["text"]) + ' where StoreName = ?'
-                    Products = ReadSqlEntry(1, Statement, StoreName)
-                    #print(Products)
+                    if State2==0:
+                        Catagory = msg["text"]
+                        Statement = 'SELECT Product_Name from ' + str(msg["text"]) + ' where StoreName = ?'
+                        Products = ReadSqlEntry(1, Statement, StoreName)
+                    elif State2==1:                       
+                        Statement = 'SELECT Product_Name from ' + Catagory + ' where StoreName = ?'
+                        Products = ReadSqlEntry(1, Statement, StoreName)
                     if len(Products)<1:
                         self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
                             [KeyboardButton(text="Back" )]]))
@@ -514,15 +556,26 @@ class MessageCounter(telepot.helper.ChatHandler):
 
                 
                 if msg["text"] != None and RegisteredUserState==4:
-                    RegisteredUserState=5                   
-                    StoreId = ReadSqlEntry(1, "SELECT Id from User where StoreName = ?", msg["text"])                   
-                    StoreName = msg["text"]                   
-                    Catagories = ReadSqlEntry(1, "SELECT Product_Catagory from Products where Id = ?", StoreId[0][0])
-                    New_Catagories = []
-                    for elem in Catagories:
-                        if elem not in New_Catagories:
-                            New_Catagories.append(elem)
-                    Catagories = New_Catagories
+                    RegisteredUserState=5  
+                    State2=0
+                    State=0
+                    if State3==0:
+                        StoreId = ReadSqlEntry(1, "SELECT Id from User where StoreName = ?", msg["text"])                   
+                        StoreName = msg["text"]                   
+                        Catagories = ReadSqlEntry(1, "SELECT Product_Catagory from Products where Id = ?", StoreId[0][0])
+                        New_Catagories = []
+                        for elem in Catagories:
+                            if elem not in New_Catagories:
+                                New_Catagories.append(elem)
+                        Catagories = New_Catagories
+                    elif State3==1:
+                        StoreId = ReadSqlEntry(1, "SELECT Id from User where StoreName = ?", StoreName)                                 
+                        Catagories = ReadSqlEntry(1, "SELECT Product_Catagory from Products where Id = ?", StoreId[0][0])
+                        New_Catagories = []
+                        for elem in Catagories:
+                            if elem not in New_Catagories:
+                                New_Catagories.append(elem)
+                        Catagories = New_Catagories
 
                     if len(Catagories)<1:
                         self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
@@ -556,6 +609,7 @@ class MessageCounter(telepot.helper.ChatHandler):
 
                 
                 if msg["text"] == "Collect":
+                    State3=0
                     RegisteredUserState=4
                     Sellers = []
                     SellersNearMe = []
@@ -640,84 +694,84 @@ class MessageCounter(telepot.helper.ChatHandler):
 
                 
 
-            if msg["text"] == "Back" and RegisteredUserState==6:
-                print("Waate")
-                RegisteredUserState=5                                 
-                Catagories = ReadSqlEntry(1, "SELECT Product_Catagory from Products where Id = ?", StoreId[0][0])
-                New_Catagories = []
-                for elem in Catagories:
-                    if elem not in New_Catagories:
-                        New_Catagories.append(elem)
-                Catagories = New_Catagories
+            #if msg["text"] == "Back" and RegisteredUserState==6:
+            #    print("Waate")
+            #    RegisteredUserState=5                                 
+            #    Catagories = ReadSqlEntry(1, "SELECT Product_Catagory from Products where Id = ?", StoreId[0][0])
+            #    New_Catagories = []
+            #    for elem in Catagories:
+            #        if elem not in New_Catagories:
+            #            New_Catagories.append(elem)
+            #    Catagories = New_Catagories
 
-                if len(Catagories)<1:
-                    self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text="Back" )]]))
-                if len(Catagories)==1:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text="Back" )]]))            
-                if len(Catagories)==2:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))], [KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Catagories)==3:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Catagories)==4:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Catagories)==5:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Catagories)==6:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Catagories)==7:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text=str((Catagories[6])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Catagories)==8:
-                    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text=str((Catagories[6])[0]))],[KeyboardButton(text=str((Catagories[7])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)<1:
+            #        self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==1:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text="Back" )]]))            
+            #    if len(Catagories)==2:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))], [KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==3:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==4:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==5:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==6:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==7:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text=str((Catagories[6])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Catagories)==8:
+            #        self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text=str((Catagories[6])[0]))],[KeyboardButton(text=str((Catagories[7])[0]))],[KeyboardButton(text="Back" )]]))
 
 
-            if msg["text"] == "Back" and RegisteredUserState==7:
-                RegisteredUserState=6
-                State=3
-                State2=0
-                Statement = 'SELECT Product_Name from ' + Catagory + ' where StoreName = ?'
-                Products = ReadSqlEntry(1, Statement, StoreName)
-                if len(Products)<1:
-                    self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text="Back" )]]))
-                if len(Products)==1:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==2:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==3:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==4:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==5:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==6:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==7:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==8:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text=str((Products[7])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==9:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text=str((Products[7])[0]))],[KeyboardButton(text=str((Products[8])[0]))],[KeyboardButton(text="Back" )]]))
-                if len(Products)==10:
-                    self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text=str((Products[7])[0]))],[KeyboardButton(text=str((Products[8])[0]))],[KeyboardButton(text=str((Products[9])[0]))],[KeyboardButton(text="Back" )]]))
+            #if msg["text"] == "Back" and RegisteredUserState==7:
+            #    RegisteredUserState=6
+            #    State=3
+            #    State2=0
+            #    Statement = 'SELECT Product_Name from ' + Catagory + ' where StoreName = ?'
+            #    Products = ReadSqlEntry(1, Statement, StoreName)
+            #    if len(Products)<1:
+            #        self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text="Back" )]]))
+            #    if len(Products)==1:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==2:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==3:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==4:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==5:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==6:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==7:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==8:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text=str((Products[7])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==9:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text=str((Products[7])[0]))],[KeyboardButton(text=str((Products[8])[0]))],[KeyboardButton(text="Back" )]]))
+            #    if len(Products)==10:
+            #        self.sender.sendMessage("Here are the items available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+            #            [KeyboardButton(text=str((Products[0])[0]))],[KeyboardButton(text=str((Products[1])[0]))],[KeyboardButton(text=str((Products[2])[0]))],[KeyboardButton(text=str((Products[3])[0]))],[KeyboardButton(text=str((Products[4])[0]))],[KeyboardButton(text=str((Products[5])[0]))],[KeyboardButton(text=str((Products[6])[0]))],[KeyboardButton(text=str((Products[7])[0]))],[KeyboardButton(text=str((Products[8])[0]))],[KeyboardButton(text=str((Products[9])[0]))],[KeyboardButton(text="Back" )]]))
   
 
 
@@ -813,6 +867,7 @@ class MessageCounter(telepot.helper.ChatHandler):
             else:            
                 if msg["text"] == "Back" and State==1:
                     State=0
+                    print("test")
                     RegisteredUserState=0
                     self.sender.sendMessage("Welcome back to the Telsto main menu, please select one of the following options...", parse_mode= 'Markdown',
                                 reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
@@ -826,6 +881,7 @@ class MessageCounter(telepot.helper.ChatHandler):
             
                 if msg["text"] == "Back" and State==2:
                     State=1
+                    print("test2")
                     self.sender.sendMessage("Choose from the following", parse_mode= 'Markdown',
                                     reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                         keyboard=[
