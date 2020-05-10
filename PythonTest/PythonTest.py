@@ -50,14 +50,14 @@ def writeTofile(data, filename):
     # Convert binary data to proper format and write it on Hard Disk
     with open(filename, 'wb') as file:
         file.write(data)
-    print("Stored blob data into: ", filename, "\n")
+    #print("Stored blob data into: ", filename, "\n")
 
 def CreateSqlEntry(conn, User, sqlstring): 
     sql = sqlstring
     cur = conn.cursor()
     cur.execute(sql, User)
     return cur.lastrowid
-    print ("Wrote To Sql")
+    #print ("Wrote To Sql")
 
 def GetUserState(UserID):
     conn = create_connection(SqlitePath)
@@ -191,6 +191,7 @@ class MessageCounter(telepot.helper.ChatHandler):
 
 
     def on_chat_message(self, msg):
+        print(msg["text"])
         Msg_ID = msg["from"]["id"]
         self._count += 1       
         try:
@@ -436,13 +437,16 @@ class MessageCounter(telepot.helper.ChatHandler):
                 
                 global ProductName
                 global ProductsName
+                global ProductsCartIndex
                 global Catagories
                 global State2
                 global State3
                 global State4
+                global State5
+                global State6
                 global Cart
-                if msg["text"] == "Back" and RegisteredUserState==3:
-                    RegisteredUserState==0
+                if msg["text"] == "Back" and RegisteredUserState==3:                 
+                    RegisteredUserState=0
                     self.sender.sendMessage("Welcome back to the Telsto main menu, please select one of the following options...", parse_mode= 'Markdown',                       
                         reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                             keyboard=[
@@ -452,8 +456,9 @@ class MessageCounter(telepot.helper.ChatHandler):
                         ]
                     ))
 
-                if msg["text"] == "Back" and RegisteredUserState==4:
+                if msg["text"] == "Back" and RegisteredUserState==4:                   
                     RegisteredUserState=3
+                    State=0
                     self.sender.sendMessage("Choose from the following", parse_mode= 'Markdown',
                                 reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                     keyboard=[
@@ -462,10 +467,6 @@ class MessageCounter(telepot.helper.ChatHandler):
                                         [KeyboardButton(text="Back" )]
                                 ]
                             ))
-
-                if msg["text"] == "Back" and RegisteredUserState==5:
-                    RegisteredUserState=0
-                    msg["text"] = "Collect"
                 
 
                 if msg["text"] == "Back" and RegisteredUserState==7:
@@ -487,6 +488,34 @@ class MessageCounter(telepot.helper.ChatHandler):
                 if msg["text"] == "Back" and RegisteredUserState==11:
                     RegisteredUserState=4
                     State3=1
+
+                if msg["text"] == "Back" and RegisteredUserState==5:
+                    if len(Cart)==0:
+                        RegisteredUserState=3
+                        msg["text"] = "Collect"
+                    else:
+                        RegisteredUserState=11
+                        Statement = "There are items in your cart, cannot continue until you checkout or remove itmes.... \n\n"
+
+                        Statement += "*" + str(StoreName) + "*" 
+                        Statement += " Store: \n\n"
+                        Total=0
+                        for i in range (0, int(len(Cart)/3)):
+                            Statement += str(i+1) + ".\t\t"
+                            Statement2 = 'SELECT Product_Name from  Products where Product_ID = ?'
+                            Statement3 = 'SELECT Product_Catagory from  Products where Product_ID = ?'
+                            ProductsName = ReadSqlEntry(1, Statement2, Cart[i*3+2])
+                            ProductsCatagory = ReadSqlEntry(1, Statement3, Cart[i*3+2])
+                            Statement += str(ProductsName[0][0]) + " (" + "_" + str(ProductsCatagory[0][0]) + "_" + ") \n\t\t\t\t\t" + str(Cart[i*3]) + "x " + str(Cart[i*3+1]) + " = R"
+                            Total = Total + int(Cart[i*3+1][Cart[i*3+1].find("R")+1:])*int(Cart[i*3])
+                            Statement +=str((int(Cart[i*3+1][Cart[i*3+1].find("R")+1:]))*int(Cart[i*3])) + "\n"
+                                                      
+                        Statement += "\n*Total: R*" + "*" + str(Total) + "*"
+                        
+                        Test = [[KeyboardButton(text="Checkout")],[KeyboardButton(text="Edit")],[KeyboardButton(text="Delete All")],[KeyboardButton(text="Back" )]]
+                        self.sender.sendMessage(Statement, parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Test))
+                
+
 
                 if "Cart" in msg["text"] and RegisteredUserState==5:                   
                     if msg["text"] == "Cart (0)":
@@ -523,32 +552,78 @@ class MessageCounter(telepot.helper.ChatHandler):
                     Cart.clear()
                     self.sender.sendMessage("Cart cleared...")
 
+                if msg["text"] == "Back" and RegisteredUserState==12:
+                    if len(Cart) == 0:
+                        RegisteredUserState=4
+                        State3=1
+                        self.sender.sendMessage("Sorry No Items In The Cart")
+                    else:
+                        RegisteredUserState=11
+                        Statement = "Here Are Your Cart Contents... \n\n"
+
+                        Statement += "*" + str(StoreName) + "*" 
+                        Statement += " Store: \n\n"
+                        Total=0
+                        for i in range (0, int(len(Cart)/3)):
+                            Statement += str(i+1) + ".\t\t"
+                            Statement2 = 'SELECT Product_Name from  Products where Product_ID = ?'
+                            Statement3 = 'SELECT Product_Catagory from  Products where Product_ID = ?'
+                            ProductsName = ReadSqlEntry(1, Statement2, Cart[i*3+2])
+                            ProductsCatagory = ReadSqlEntry(1, Statement3, Cart[i*3+2])
+                            Statement += str(ProductsName[0][0]) + " (" + "_" + str(ProductsCatagory[0][0]) + "_" + ") \n\t\t\t\t\t" + str(Cart[i*3]) + "x " + str(Cart[i*3+1]) + " = R"
+                            Total = Total + int(Cart[i*3+1][Cart[i*3+1].find("R")+1:])*int(Cart[i*3])
+                            Statement +=str((int(Cart[i*3+1][Cart[i*3+1].find("R")+1:]))*int(Cart[i*3])) + "\n"
+                                                      
+                        Statement += "\n*Total: R*" + "*" + str(Total) + "*"
+                        
+                        Test = [[KeyboardButton(text="Checkout")],[KeyboardButton(text="Edit")],[KeyboardButton(text="Delete All")],[KeyboardButton(text="Back" )]]
+                        self.sender.sendMessage(Statement, parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Test))
+                
+                
+                
+
+                              
+                if msg["text"] == "Back" and RegisteredUserState==14:
+                    RegisteredUserState=12
+                    State5=1
+
+                if msg["text"] == "Back" and RegisteredUserState==16:
+                    RegisteredUserState=12
+                    State5=1
+                
                 global SelectedItemPrice
                 global Quantity
+                global CartIndex
                 if msg["text"] != None and RegisteredUserState==12:
                     RegisteredUserState=13
-                    CartIndex = int(msg["text"].rsplit('.', 1)[0])
+                    ProductsCartIndex = msg["text"]
+                    #print("State5: " + str(State5))
+                    if State5==0:
+                        CartIndex = int(msg["text"].rsplit('.', 1)[0])
 
                     ChangePrice = "Change Price Range:\t\t[" + str(Cart[CartIndex*3-2]) +"]"
                     ChangeQuantity = "Change Quantity:\t\t[" + str(Cart[CartIndex*3-3]) + "]"
                     self.sender.sendMessage("What would you like to do?", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
                         [KeyboardButton(text=ChangePrice)],[KeyboardButton(text=ChangeQuantity)],[KeyboardButton(text="Remove")],[KeyboardButton(text="Back" )]]))
+
+                if msg["text"] == "Back" and RegisteredUserState==13:
+                    if State5==0:
+                        RegisteredUserState=12
+                        Statement = []                   
+                        for i in range (0, int(len(Cart)/3)):
+                            Statement2 = 'SELECT Product_Name from  Products where Product_ID = ?'
+                            ProductsName = str(i+1) + ".  " + str(ReadSqlEntry(1, Statement2, Cart[i*3+2])[0][0])
+                            Statement.append([KeyboardButton(text=''+ProductsName+'')])
+                            #print(Statement)
+                        Statement.append([KeyboardButton(text="Back" )])
+                        self.sender.sendMessage("Select which item to edit", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Statement))
+                    else:
+                        State5=0
+
                 
-                    global RangeToChange
-                if msg["text"] != None and RegisteredUserState==15:
-                    Cart[CartIndex*3-2] =  RangeToChange
-                    Cart[CartIndex*3-3] = msg["text"]
 
-
-                if msg["text"] != None and RegisteredUserState==14:
-                    RegisteredUserState=15
-                    RangeToChange = msg["text"]
-                    self.sender.sendMessage("How many...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                        [KeyboardButton(text="1"), KeyboardButton(text="2")],[KeyboardButton(text="3"), KeyboardButton(text="4")],[KeyboardButton(text="5"), KeyboardButton(text="6")],[KeyboardButton(text="Back" )]]))
-
-
-                
-                if "Change Price Range" in msg["text"] and RegisteredUserState==13:
+                if msg["text"] == "Back" and RegisteredUserState==15:
+                    State6=1
                     RegisteredUserState=14
                     PriceList = ["1g", "5g", "10g", "20g", "50g", "100g"]
                     PriceList2 = []
@@ -565,10 +640,115 @@ class MessageCounter(telepot.helper.ChatHandler):
                         Statement.append([KeyboardButton(text=''+Statement2+'')])
                     Statement.append([KeyboardButton(text="Back" )])
                     self.sender.sendMessage("what would you like to change it to?", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Statement))
+
+
+
+                global RangeToChange
+                if msg["text"] != None and RegisteredUserState==15:
+                    Cart[CartIndex*3-2] =  RangeToChange
+                    Cart[CartIndex*3-3] = msg["text"]
+
+                    RegisteredUserState=11
+                    Statement = "Here Are Your Cart Contents... \n\n"
+
+                    Statement += "*" + str(StoreName) + "*" 
+                    Statement += " Store: \n\n"
+                    Total=0
+                    for i in range (0, int(len(Cart)/3)):
+                        Statement += str(i+1) + ".\t\t"
+                        Statement2 = 'SELECT Product_Name from  Products where Product_ID = ?'
+                        Statement3 = 'SELECT Product_Catagory from  Products where Product_ID = ?'
+                        ProductsName = ReadSqlEntry(1, Statement2, Cart[i*3+2])
+                        ProductsCatagory = ReadSqlEntry(1, Statement3, Cart[i*3+2])
+                        Statement += str(ProductsName[0][0]) + " (" + "_" + str(ProductsCatagory[0][0]) + "_" + ") \n\t\t\t\t\t" + str(Cart[i*3]) + "x " + str(Cart[i*3+1]) + " = R"
+                        Total = Total + int(Cart[i*3+1][Cart[i*3+1].find("R")+1:])*int(Cart[i*3])
+                        Statement +=str((int(Cart[i*3+1][Cart[i*3+1].find("R")+1:]))*int(Cart[i*3])) + "\n"
+                                                      
+                    Statement += "\n*Total: R*" + "*" + str(Total) + "*"
+                        
+                    Test = [[KeyboardButton(text="Checkout")],[KeyboardButton(text="Edit")],[KeyboardButton(text="Delete All")],[KeyboardButton(text="Back" )]]
+                    self.sender.sendMessage(Statement, parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Test))
+
+
+                
+
+
+
+                if msg["text"] != None and RegisteredUserState==14:
+                    if State6==0:
+                        RegisteredUserState=15
+                        RangeToChange = msg["text"]
+                        self.sender.sendMessage("How many...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+                            [KeyboardButton(text="1"), KeyboardButton(text="2")],[KeyboardButton(text="3"), KeyboardButton(text="4")],[KeyboardButton(text="5"), KeyboardButton(text="6")],[KeyboardButton(text="Back" )]]))
+
+                    else:
+                        State6=0
+
+                
+                    
+
+
+                
+                if "Change Price Range" in msg["text"] and RegisteredUserState==13:
+                    RegisteredUserState=14
+                    PriceList = ["1g", "5g", "10g", "20g", "50g", "100g"]
+                    PriceList2 = []
+                    State6=0
+                    for i in range (0, 6): 
+                        Prices = ReadSqlEntry(1, 'SELECT Price_' + PriceList[i] + ' from ' + Catagory + ' where Product_Name = ?'  , ProductName)
+                        if Prices[0][0] != None:
+                            PriceList2.append(PriceList[i])
+                            PriceList2.append(Prices[0][0])
+                    
+                    PriceLen = len(PriceList2)/2
+                    Statement = []
+                    for i in range (0, int(len(PriceList2)/2)):
+                        Statement2 = str(PriceList2[i*2]) + ": R" + str(PriceList2[i*2+1])
+                        Statement.append([KeyboardButton(text=''+Statement2+'')])
+                    Statement.append([KeyboardButton(text="Back" )])
+                    self.sender.sendMessage("what would you like to change it to?", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Statement))
+
+
+                
+
+
+
+                if msg["text"] != None and RegisteredUserState==16:
+                    Cart[CartIndex*3-3] = msg["text"]
+
+                    RegisteredUserState=11
+                    Statement = "Here Are Your Cart Contents... \n\n"
+
+                    Statement += "*" + str(StoreName) + "*" 
+                    Statement += " Store: \n\n"
+                    Total=0
+                    for i in range (0, int(len(Cart)/3)):
+                        Statement += str(i+1) + ".\t\t"
+                        Statement2 = 'SELECT Product_Name from  Products where Product_ID = ?'
+                        Statement3 = 'SELECT Product_Catagory from  Products where Product_ID = ?'
+                        ProductsName = ReadSqlEntry(1, Statement2, Cart[i*3+2])
+                        ProductsCatagory = ReadSqlEntry(1, Statement3, Cart[i*3+2])
+                        Statement += str(ProductsName[0][0]) + " (" + "_" + str(ProductsCatagory[0][0]) + "_" + ") \n\t\t\t\t\t" + str(Cart[i*3]) + "x " + str(Cart[i*3+1]) + " = R"
+                        Total = Total + int(Cart[i*3+1][Cart[i*3+1].find("R")+1:])*int(Cart[i*3])
+                        Statement +=str((int(Cart[i*3+1][Cart[i*3+1].find("R")+1:]))*int(Cart[i*3])) + "\n"
+                                                      
+                    Statement += "\n*Total: R*" + "*" + str(Total) + "*"
+                        
+                    Test = [[KeyboardButton(text="Checkout")],[KeyboardButton(text="Edit")],[KeyboardButton(text="Delete All")],[KeyboardButton(text="Back" )]]
+                    self.sender.sendMessage(Statement, parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Test))
+
+
+                
+                if "Change Quantity" in msg["text"] and RegisteredUserState==13:
+                    RegisteredUserState=16
+                    self.sender.sendMessage("How many would you like to change it to?", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+                            [KeyboardButton(text="1"), KeyboardButton(text="2")],[KeyboardButton(text="3"), KeyboardButton(text="4")],[KeyboardButton(text="5"), KeyboardButton(text="6")],[KeyboardButton(text="Back" )]]))
+
+              
                     
 
                 if msg["text"] == "Remove" and RegisteredUserState==13:
-                    CartIndex = int(ProductsName.rsplit('.', 1)[0])
+                    CartIndex = int(ProductsCartIndex.rsplit('.', 1)[0])
                     del Cart[CartIndex*3-3:CartIndex*3]
 
                     if len(Cart) == 0:
@@ -597,17 +777,17 @@ class MessageCounter(telepot.helper.ChatHandler):
                         Test = [[KeyboardButton(text="Checkout")],[KeyboardButton(text="Edit")],[KeyboardButton(text="Delete All")],[KeyboardButton(text="Back" )]]
                         self.sender.sendMessage(Statement, parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Test))
 
-
-                
+            
                 
                 if msg["text"] == "Edit" and RegisteredUserState==11:
+                    State5=0
                     RegisteredUserState=12
                     Statement = []                   
                     for i in range (0, int(len(Cart)/3)):
                         Statement2 = 'SELECT Product_Name from  Products where Product_ID = ?'
                         ProductsName = str(i+1) + ".  " + str(ReadSqlEntry(1, Statement2, Cart[i*3+2])[0][0])
                         Statement.append([KeyboardButton(text=''+ProductsName+'')])
-                        print(Statement)
+                        #print(Statement)
                     Statement.append([KeyboardButton(text="Back" )])
                     self.sender.sendMessage("Select which item to edit", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Statement))
                 
@@ -619,7 +799,7 @@ class MessageCounter(telepot.helper.ChatHandler):
                     RegisteredUserState=10
                     Quantity = msg["text"]
                     SelectedItemPrice2=SelectedItemPrice[SelectedItemPrice.find("R")+1:]
-                    print (SelectedItemPrice)
+                    #print (SelectedItemPrice)
                     Statement = "Add... " + '\n\n' + str(msg["text"]) + "x " + str(SelectedItemPrice) + '\n' + "Total: " + "R" + str(int(msg["text"])*int(SelectedItemPrice2)) + '\n\n' + "To Cart?"
                     self.sender.sendMessage(Statement, parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
                         [KeyboardButton(text="Yes")],[KeyboardButton(text="No")]]))
@@ -632,7 +812,7 @@ class MessageCounter(telepot.helper.ChatHandler):
                     Cart.append(ProductId[0][0])
                     RegisteredUserState=5
                     self.sender.sendMessage("Added To Cart")
-                    print(Cart)
+                    #print(Cart)
 
                 if msg["text"] == "No" and RegisteredUserState==10:
                     RegisteredUserState=5
@@ -672,7 +852,7 @@ class MessageCounter(telepot.helper.ChatHandler):
                 if msg["text"] != None and RegisteredUserState==6:
                     RegisteredUserState=7
                     #print(Catagory)
-                    print(msg["text"])
+                    #print(msg["text"])
                     Statement = 'SELECT Image from ' + Catagory + ' where Product_Name = ?'
                     Statement2 = 'SELECT Product_ID from  Products where Product_Name = ?'
                     ProductId = ReadSqlEntry(1, Statement2, msg["text"])  
@@ -749,7 +929,7 @@ class MessageCounter(telepot.helper.ChatHandler):
                                 New_Catagories.append(elem)
                         Catagories = New_Catagories
                     
-                    print (Cart)
+                    #print (Cart)
                     if str(Cart)=="[]":
                         CartString = "Cart (0)"
                     else:
@@ -769,39 +949,8 @@ class MessageCounter(telepot.helper.ChatHandler):
                                                                 
                   
 
-
-                    #if len(Catagories)<1:
-                    #    self.sender.sendMessage("Sorry no items in store...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==1:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text="Back" )]]))            
-                    #if len(Catagories)==2:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))], [KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==3:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=CartString)],[KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==4:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==5:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==6:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==7:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text=str((Catagories[6])[0]))],[KeyboardButton(text="Back" )]]))
-                    #if len(Catagories)==8:
-                    #    self.sender.sendMessage("Here are the catagories available...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                    #        [KeyboardButton(text=str((Catagories[0])[0]))],[KeyboardButton(text=str((Catagories[1])[0]))],[KeyboardButton(text=str((Catagories[2])[0]))],[KeyboardButton(text=str((Catagories[3])[0]))],[KeyboardButton(text=str((Catagories[4])[0]))],[KeyboardButton(text=str((Catagories[5])[0]))],[KeyboardButton(text=str((Catagories[6])[0]))],[KeyboardButton(text=str((Catagories[7])[0]))],[KeyboardButton(text="Back" )]]))
-
-                 
-
                 
-                if msg["text"] == "Collect":
+                if msg["text"] == "Collect" and RegisteredUserState==3:
                     State3=0
                     State4=0
                     RegisteredUserState=4
@@ -813,7 +962,11 @@ class MessageCounter(telepot.helper.ChatHandler):
                     cur.execute("SELECT Id FROM User WHERE TGReferralState = ?", ('SELLER CONFIRMED',))
                     rows = cur.fetchall()
                     for row in rows:
-                        Sellers.append(row)
+                        CheckSellerType = ReadSqlEntry(1, "SELECT StoreType from User where Id = ?", (row[0]))
+                        #print(CheckSellerType[0][0])
+                        if int(CheckSellerType[0][0]) == 1 or int(CheckSellerType[0][0]) == 3 or int(CheckSellerType[0][0]) == 5 or int(CheckSellerType[0][0]) == 6:   #1 - Collect, 2 = Deliver, 3 - Collect and Deliver, 4 - Courier, 5 Collect and Courier, 6 - Collect, Deliver and Courier, 7 - Deliver and Courier                         
+                            Sellers.append(row)
+                    
                     
                     NumSellers = (len(Sellers))
                     BuyerLatLong = ReadSqlEntry(1, "SELECT Latitude, Longitude from User where User_ID = ?", Msg_ID)
@@ -850,43 +1003,85 @@ class MessageCounter(telepot.helper.ChatHandler):
                     SellersNearMe2 =[]
 
 
+                    if len(SellersNearMe)<1:
+                        self.sender.sendMessage("Sorry no Stores near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
+                            [KeyboardButton(text="Back" )]]))
+                    else:
+                        Statement =[]
+                        for i in range (0, int(len(SellersNearMe))):
+                            StoresStr = ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[i])[0][0]
+                            #print(StoresStr)
+                            Statement.append([KeyboardButton(text=''+StoresStr+'')])
+                        Statement.append([KeyboardButton(text="Back" )])
+                        self.sender.sendMessage("Here are the Stores available near you for collection...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Statement))   
+                                       
+            
+            if msg["text"] == "Deliver" and RegisteredUserState==3:
+                    State3=0
+                    State4=0
+                    RegisteredUserState=4
+                    Sellers = []
+                    SellersNearMe = []
+                    SellersNearMe2 = []
+                    conn = create_connection(SqlitePath)
+                    cur = conn.cursor()
+                    cur.execute("SELECT Id FROM User WHERE TGReferralState = ?", ('SELLER CONFIRMED',))
+                    rows = cur.fetchall()
+                    for row in rows:
+                        CheckSellerType = ReadSqlEntry(1, "SELECT StoreType from User where Id = ?", (row[0]))
+                        print(CheckSellerType[0][0])
+                        if int(CheckSellerType[0][0]) == 2 or int(CheckSellerType[0][0]) == 3 or int(CheckSellerType[0][0]) == 6 or int(CheckSellerType[0][0]) == 7:   #1 - Collect, 2 = Deliver, 3 - Collect and Deliver, 4 - Courier, 5 Collect and Courier, 6 - Collect, Deliver and Courier, 7 - Deliver and Courier                         
+                            Sellers.append(row)
+                    
+                    
+                    NumSellers = (len(Sellers))
+                    BuyerLatLong = ReadSqlEntry(1, "SELECT Latitude, Longitude from User where User_ID = ?", Msg_ID)
+                    #SellerLatLong = ReadSqlEntry(1, "SELECT Latitude, Longitude from User where Id = ?", SellersNearMe[i][0])
+                    for i in range (0, NumSellers):
+                         SellerLatLong = ReadSqlEntry(1, "SELECT Latitude, Longitude from User where Id = ?", Sellers[i][0])
+                         distanceapart = GetLocationDistance(BuyerLatLong[0][0], BuyerLatLong[0][1], SellerLatLong[0][0], SellerLatLong[0][1])
+                         if distanceapart <= 10:
+                            SellersNearMe.extend(Sellers[i])
+                    Sellers = []
+
+                    for i in range (0, len(SellersNearMe)):                       
+                        OnlineOffline = ReadSqlEntry(1, "SELECT OnlineOffline from User where Id = ?", SellersNearMe[i])[0][0]
+                        if OnlineOffline == 1:
+                            SellersNearMe2.append(SellersNearMe[i])
+
+                    SellersNearMe = SellersNearMe2
+                    SellersNearMe2 =[]
+
+                    Now = datetime.datetime.now()
+                    NowHour = Now.hour
+                    
+                    for i in range (0, len(SellersNearMe)):
+                        OpenHours = ReadSqlEntry(1, "SELECT Timer24Hours from User where Id = ?", SellersNearMe[i])[0][0]
+                        if OpenHours == "24":
+                            SellersNearMe2.append(SellersNearMe[i])
+                        else:
+                            OpenTime = OpenHours[0:2]
+                            CloseTime = OpenHours[2:4]
+                            if NowHour > int(OpenTime) and int(OpenTime) < NowHour:
+                                SellersNearMe2.append(SellersNearMe[i])
+
+                    SellersNearMe = SellersNearMe2
+                    SellersNearMe2 =[]
+
 
                     if len(SellersNearMe)<1:
                         self.sender.sendMessage("Sorry no Stores near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
                             [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==1:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))],[KeyboardButton(text="Back" )]]))            
-                    if len(SellersNearMe)==2:    
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==3:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==4:    
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==5:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[4])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==6:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[4])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[5])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==7:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[4])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[5])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[6])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==8:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[4])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[5])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[6])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[7])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==9:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[4])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[5])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[6])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[7])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[8])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    if len(SellersNearMe)==10:
-                        self.sender.sendMessage("Here is a list of stores available for collection near you...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=[
-                            [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[0])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[1])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[2])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[3])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[4])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[5])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[6])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[7])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[8])[0][0]))], [KeyboardButton(text=str(ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[9])[0][0]))], [KeyboardButton(text="Back" )]]))
-                    
+                    else:
+                        Statement =[]
+                        for i in range (0, int(len(SellersNearMe))):
+                            StoresStr = ReadSqlEntry(1, "SELECT StoreName from User where Id = ?", SellersNearMe[i])[0][0]
+                            print(StoresStr)
+                            Statement.append([KeyboardButton(text=''+StoresStr+'')])
+                        Statement.append([KeyboardButton(text="Back" )])
+                        self.sender.sendMessage("Here are the Stores available near you for Delivery...", parse_mode= 'Markdown', reply_markup=ReplyKeyboardMarkup(resize_keyboard = True, keyboard=Statement))   
+                                       
 
-                
 
 
             if GetUserState(Msg_ID) == False:    
@@ -980,7 +1175,6 @@ class MessageCounter(telepot.helper.ChatHandler):
             else:            
                 if msg["text"] == "Back" and State==1:
                     State=0
-                    print("test")
                     RegisteredUserState=0
                     self.sender.sendMessage("Welcome back to the Telsto main menu, please select one of the following options...", parse_mode= 'Markdown',
                                 reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
@@ -993,7 +1187,6 @@ class MessageCounter(telepot.helper.ChatHandler):
             
                 if msg["text"] == "Back" and State==2:
                     State=1
-                    print("test2")
                     self.sender.sendMessage("Choose from the following", parse_mode= 'Markdown',
                                     reply_markup=ReplyKeyboardMarkup(resize_keyboard = True,
                                         keyboard=[
@@ -1037,7 +1230,7 @@ class MessageCounter(telepot.helper.ChatHandler):
 
 def main():
     print ("Program Start")
-    #print(id_generator())
+
     
 
     
